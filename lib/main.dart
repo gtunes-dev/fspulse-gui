@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'columns.dart';
+import 'model/data_model.dart';
 import 'widgets/column_list.dart';
 
 void main() {
@@ -30,7 +31,31 @@ class FsPulseHomePage extends StatefulWidget {
   State<FsPulseHomePage> createState() => _FsPulseHomePageState();
 }
 
-class _FsPulseHomePageState extends State<FsPulseHomePage> {
+class _FsPulseHomePageState extends State<FsPulseHomePage>
+    with SingleTickerProviderStateMixin {
+  late final FsPulseDataModel _model;
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _model = FsPulseDataModel();
+
+    _tabController = TabController(length: 5, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) return;
+      setState(() {
+        _model.activeDomain = DataDomain.values[_tabController.index];
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
   void _handleToggleSortOrder(ColumnSpec column) {
     setState(() {
       column.sortOrder = switch (column.sortOrder) {
@@ -42,12 +67,43 @@ class _FsPulseHomePageState extends State<FsPulseHomePage> {
   }
 
   void _handleReorder(int oldIndex, int newIndex) {
-  setState(() {
-    if (newIndex > oldIndex) newIndex -= 1;
-    final item = mockRootsColumns.removeAt(oldIndex);
-    mockRootsColumns.insert(newIndex, item);
-  });
-}
+    setState(() {
+      final columns = _model.current.columns;
+      if (newIndex > oldIndex) newIndex -= 1;
+      final item = columns.removeAt(oldIndex);
+      columns.insert(newIndex, item);
+    });
+  }
+
+  Widget _buildTabViewForCurrentDomain() {
+    return Row(
+      children: [
+        Container(
+          width: 200,
+          color: Colors.grey.shade200,
+          child: ColumnList(
+            columns: _model.current.columns,
+            onToggleVisibility: (column, visible) {
+              setState(() {
+                column.visible = visible;
+              });
+            },
+            onToggleSortOrder: _handleToggleSortOrder,
+            onReorder: _handleReorder,
+          ),
+        ),
+        const VerticalDivider(width: 1),
+        Expanded(
+          child: Container(
+            color: Colors.white,
+            child: Center(
+              child: Text('Main Content: ${_model.activeDomain.name}'),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +113,8 @@ class _FsPulseHomePageState extends State<FsPulseHomePage> {
         appBar: AppBar(
           backgroundColor: Theme.of(context).colorScheme.inversePrimary,
           title: Text(widget.title),
-          bottom: const TabBar(
+          bottom: TabBar(
+            controller: _tabController,
             tabs: [
               Tab(text: 'Roots'),
               Tab(text: 'Scans'),
@@ -68,37 +125,8 @@ class _FsPulseHomePageState extends State<FsPulseHomePage> {
           ),
         ),
         body: TabBarView(
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 200,
-                  color: Colors.grey.shade200,
-                  child: ColumnList(
-                    columns: mockRootsColumns,
-                    onToggleVisibility: (column, visible) {
-                      setState(() {
-                        column.visible = visible;
-                      });
-                    },
-                    onToggleSortOrder: _handleToggleSortOrder,
-                    onReorder: _handleReorder,
-                  ),
-                ),
-                const VerticalDivider(width: 1),
-                Expanded(
-                  child: Container(
-                    color: Colors.white,
-                    child: const Center(child: Text('Main Content: Roots')),
-                  ),
-                ),
-              ],
-            ),
-            Center(child: Text('Scans View')),
-            Center(child: Text('Items View')),
-            Center(child: Text('Changes View')),
-            Center(child: Text('Alerts View')),
-          ],
+          controller: _tabController,
+          children: List.generate(5, (_) => _buildTabViewForCurrentDomain()),
         ),
       ),
     );
