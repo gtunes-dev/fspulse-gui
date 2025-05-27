@@ -1,0 +1,25 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "fspulse_gui",
+      "request": "launch",
+      "type": "dart",
+      "args": ["-d", "macos", "--flavor", "FsPulse"]
+    },
+    {
+      "name": "fspulse_gui (profile mode)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "profile",
+      "args": ["-d", "macos", "--flavor", "FsPulse"]
+    },
+    {
+      "name": "fspulse_gui (release mode)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "release",
+      "args": ["-d", "macos", "--flavor", "FsPulse"]
+    }
+  ]
+}
